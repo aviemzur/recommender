@@ -1,0 +1,10 @@
+{
+  "movies": {},
+  "liked": [],
+  "disliked": [],
+  "skipped": [],
+  "tv": {},
+  "tv_liked": [],
+  "tv_disliked": [],
+  "tv_skipped": []
+}
