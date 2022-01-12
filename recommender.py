@@ -158,7 +158,7 @@ class Recommender:
                 recommendations = [results[0]['id']]
         else:
             if len(items) < 1:
-                items = get_top_rated
+                items = get_top_rated()
                 items = {item['id']: item for item in items}
                 self.db[item_type] = items
                 data.put_data(self.db)
