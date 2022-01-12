@@ -17,4 +17,4 @@ streamlit run recommender.py
 
 ## Screenshots
 
-![Movies](/images/screen1.png =100x)
+<img src="/images/screen1.png" width="100" />
