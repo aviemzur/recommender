@@ -14,3 +14,7 @@ pip install requirements.txt
 ```shell
 streamlit run recommender.py
 ```
+
+## Screenshots
+
+![Movies](/images/screen1.png)
