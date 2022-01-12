@@ -18,3 +18,4 @@ streamlit run recommender.py
 ## Screenshots
 
 <img src="/images/screen1.png" width="250" />
+<img src="/images/screen2.png" width="250" />
