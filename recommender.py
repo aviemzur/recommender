@@ -149,7 +149,7 @@ class Recommender:
             item_type
         )
         item = self.get_current_item(get_item, get_top_rated, search_item, item_type, items, liked, disliked, skipped)
-        self.add_poster(item)
+        self.add_poster(item, item_type)
         self.add_buttons(dislike, like, skip)
 
     def _setup(self, item_type):
@@ -195,14 +195,20 @@ class Recommender:
                 return item
 
     @staticmethod
-    def add_poster(item):
-        poster_path = item.get('poster_path', None)
-        imdb_id = item.get('imdb_id', None)
+    def add_poster(item, item_type):
+        poster_path = item.get('poster_path')
+        imdb_id = item.get('imdb_id')
+        name = item.get('name')
         cols = st.columns(3)
         with cols[1]:
             if poster_path:
+                url = ""
+                if item_type == "movies":
+                    url = f"https://www.imdb.com/title/{imdb_id}/"
+                elif item_type == "tv":
+                    url = f"https://www.imdb.com/find?s=tt&q={name}"
                 st.markdown(
-                    f'<a href="https://www.imdb.com/title/{imdb_id}/" target="_blank">'
+                    f'<a href="{url}" target="_blank">'
                     f'<img src="{tmdb.POSTER_PREFIX + poster_path}" width=300></a>',
                     unsafe_allow_html=True
                 )
