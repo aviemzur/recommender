@@ -154,16 +154,21 @@ class Recommender:
         recommendations = []
         if self.query:
             results = search_item(self.query)
+            results = [result['id'] for result in results]
+            results = [result for result in results
+                       if result not in liked and result not in disliked and result not in skipped]
             if results:
-                recommendations = [results[0]['id']]
+                recommendations = [results[0]]
         else:
             if len(items) < 1:
                 items = get_top_rated()
-                items = {item['id']: item for item in items}
+                items = {item['id']: item for item in items[:20]}
                 self.db[item_type] = items
                 data.put_data(self.db)
             st.session_state['db'] = self.db
-            recommendations = self._get_recommendations(get_item, items, liked, disliked, skipped)
+            if len(liked) < 1:
+                liked = items
+            recommendations = self._get_recommendations(get_item, liked, disliked, skipped)
 
         for item_id in recommendations:
             item = items.get(item_id, None)
@@ -201,9 +206,9 @@ class Recommender:
             st.button('👍', on_click=like)
 
     @staticmethod
-    def _get_recommendations(get_item, items, liked, disliked, skipped):
+    def _get_recommendations(get_item, liked, disliked, skipped):
         recommendations = {}
-        for item_id in items:
+        for item_id in liked:
             item = get_item(item_id)
             for rec in item.get('recommendations', []):
                 if rec in recommendations:
@@ -215,7 +220,6 @@ class Recommender:
             for rec in item.get('recommendations', []):
                 if rec in recommendations:
                     recommendations[rec] -= 1
-                    st.write(1)
                 else:
                     recommendations[rec] = -1
         for item_id in skipped:
