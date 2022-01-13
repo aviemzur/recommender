@@ -1,5 +1,7 @@
 # recommender
-Movies/TV Recommender
+Movies/TV Recommender.
+
+Recommends Movies, TV Shows, Actors, Directors, Writers.
 
 ## Setup
 

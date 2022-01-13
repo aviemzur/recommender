@@ -54,13 +54,19 @@ class Recommender:
 
     def actors(self):
         actors = []
-        for movie_id in self.liked:
-            movie = self._get_movie(movie_id)
-            movie_credits = movie.get('credits')
-            if movie_credits:
-                cast = movie_credits.get('cast')
-                if cast:
-                    actors += cast
+
+        def scan_casts(output, liked, get_item):
+            for item_id in liked:
+                item = get_item(item_id)
+                item_credits = item.get('credits')
+                if item_credits:
+                    cast = item_credits.get('cast')
+                    if cast:
+                        output += cast
+
+        scan_casts(actors, self.liked, self._get_movie)
+        scan_casts(actors, self.tv_liked, self._get_tv)
+
         self._people(actors)
 
     def directors(self):
@@ -70,16 +76,22 @@ class Recommender:
         self._crew(['Writer', 'Screenplay'])
 
     def _crew(self, jobs):
-        directors = []
-        for movie_id in self.liked:
-            movie = self._get_movie(movie_id)
-            movie_credits = movie.get('credits')
-            if movie_credits:
-                movie_crew = movie_credits.get('crew')
-                if movie_crew:
-                    movie_directors = [person for person in movie_crew if person['job'] in jobs]
-                    directors += movie_directors
-        self._people(directors)
+        people = []
+
+        def scan_crew(output, liked, get_item):
+            for item_id in liked:
+                item = get_item(item_id)
+                item_credits = item.get('credits')
+                if item_credits:
+                    item_crew = item_credits.get('crew')
+                    if item_crew:
+                        item_people = [person for person in item_crew if person['job'] in jobs]
+                        output += item_people
+
+        scan_crew(people, self.liked, self._get_movie)
+        scan_crew(people, self.tv_liked, self._get_tv)
+
+        self._people(people)
 
     def _people(self, people):
         people_dict = {person['id']: person for person in people}
