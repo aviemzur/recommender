@@ -21,6 +21,6 @@ streamlit run recommender.py
 
 <img src="/images/screen1.png" width="400" />
 <img src="/images/screen2.png" width="400" />
-<img src="/images/screen3.png" width="400" />
-<img src="/images/screen4.png" width="400" />
-<img src="/images/screen5.png" width="400" />
+<img src="/images/screen3.png" width="200" />
+<img src="/images/screen4.png" width="200" />
+<img src="/images/screen5.png" width="200" />
