@@ -1,3 +1,5 @@
+import datetime
+
 import streamlit as st
 
 import data
@@ -22,35 +24,46 @@ class Recommender:
         self.tv = self.db['tv']
 
         self.liked = self.db['liked']
-        self.disliked = self.db['disliked']
-        self.skipped = self.db['skipped']
-
         self.tv_liked = self.db['tv_liked']
-        self.tv_disliked = self.db['tv_disliked']
+
+        self.skipped = self.db['skipped']
         self.tv_skipped = self.db['tv_skipped']
 
         self.query = ''
 
         st.set_page_config(page_title='Recommender')
 
-        cols = st.columns(5)
-        with cols[2]:
+        cols = st.columns(4)
+        with cols[0]:
             page = st.selectbox('', ['Movies', 'TV', 'Actors', 'Directors', 'Writers'])
 
         if page == 'Movies':
-            with cols[3]:
-                self.query = st.text_input('', value='', placeholder="Search", key='query')
-            self.recommendations('movies')
+            with cols[0]:
+                self.query, self.start_date, self.end_date, self.min_rating, self.max_rating = self.add_filters()
+            self.recommendations('movies', cols)
         if page == 'TV':
-            with cols[3]:
-                self.query = st.text_input('', value='', placeholder="Search", key='query')
-            self.recommendations('tv')
+            with cols[0]:
+                self.query, self.start_date, self.end_date, self.min_rating, self.max_rating = self.add_filters()
+            self.recommendations('tv', cols)
         elif page == 'Actors':
             self.actors()
         elif page == 'Directors':
             self.directors()
         elif page == 'Writers':
             self.writers()
+
+    @staticmethod
+    def add_filters():
+        query = st.text_input('', value='', placeholder="Search", key='query')
+        start_year = 1900
+        current_year = datetime.date.today().year
+        date_range = range(start_year, current_year + 11)
+        start_date = st.selectbox('Start Date', date_range)
+        end_date = st.selectbox('End Date', date_range, index=current_year - start_year)
+        rating_range = range(0, 11)
+        min_rating = st.selectbox('Minimum Rating', rating_range)
+        max_rating = st.selectbox('Maximum Rating', rating_range, index=10)
+        return query, start_date, end_date, min_rating, max_rating
 
     def actors(self):
         actors = []
@@ -105,7 +118,7 @@ class Recommender:
         people = [
             people_dict.get(k) for k, _ in
             reversed(sorted(people_recommendations.items(), key=lambda item: item[1]))
-            if k not in self.liked and k not in self.disliked and k not in self.skipped
+            if k not in self.liked and k not in self.skipped
         ]
         if len(people) >= 100:
             people = people[:99]
@@ -144,31 +157,31 @@ class Recommender:
 
         return tv
 
-    def recommendations(self, item_type):
-        dislike, disliked, get_item, get_top_rated, items, like, liked, search_item, skip, skipped = self._setup(
+    def recommendations(self, item_type, cols):
+        get_item, get_top_rated, items, like, liked, search_item, skip, skipped = self._setup(
             item_type
         )
-        item = self.get_current_item(get_item, get_top_rated, search_item, item_type, items, liked, disliked, skipped)
-        self.add_poster(item, item_type)
-        self.add_buttons(dislike, like, skip)
+        item = self.get_current_item(get_item, get_top_rated, search_item, item_type, items, liked, skipped)
+        self.add_poster(item, item_type, cols)
+        self.add_buttons(like, skip)
 
     def _setup(self, item_type):
         if item_type == 'movies':
-            return self.dislike, self.disliked, self._get_movie, tmdb.get_movies_top_rated, \
+            return self._get_movie, tmdb.get_movies_top_rated, \
                    self.movies, self.like, self.liked, tmdb.search_movie, self.skip, self.skipped
         elif item_type == 'tv':
-            return self.tv_dislike, self.tv_disliked, self._get_tv, tmdb.get_tv_top_rated, \
+            return self._get_tv, tmdb.get_tv_top_rated, \
                    self.tv, self.tv_like, self.tv_liked, tmdb.search_tv, self.tv_skip, self.tv_skipped
         else:
             raise ValueError(f'No such item type: {item_type}')
 
-    def get_current_item(self, get_item, get_top_rated, search_item, item_type, items, liked, disliked, skipped):
+    def get_current_item(self, get_item, get_top_rated, search_item, item_type, items, liked, skipped):
         recommendations = []
         if self.query:
             results = search_item(self.query)
             results = [result['id'] for result in results]
             results = [result for result in results
-                       if result not in liked and result not in disliked and result not in skipped]
+                       if result not in liked and result not in skipped]
             if results:
                 recommendations = [results[0]]
         else:
@@ -180,7 +193,7 @@ class Recommender:
             st.session_state['db'] = self.db
             if len(liked) < 1:
                 liked = items
-            recommendations = self._get_recommendations(get_item, liked, disliked, skipped)
+            recommendations = self._get_recommendations(get_item, liked, skipped)
 
         for item_id in recommendations:
             item = items.get(item_id, None)
@@ -188,18 +201,26 @@ class Recommender:
                 item = get_item(item_id)
                 items[str(item_id)] = item
                 data.put_data(self.db)
+
+            rating = item.get('vote_average', 6)
+            release_date = item.get('release_date', item.get('first_air_date', datetime.date.today().year))
+            year = int(str(release_date)[:4])
+
             if not item['poster_path']:
+                pass
+            elif year not in list(range(self.start_date, self.end_date + 1)):
+                pass
+            elif rating < self.min_rating or rating > self.max_rating:
                 pass
             else:
                 st.session_state['id'] = item_id
                 return item
 
     @staticmethod
-    def add_poster(item, item_type):
+    def add_poster(item, item_type, cols):
         poster_path = item.get('poster_path')
         imdb_id = item.get('imdb_id')
         name = item.get('name')
-        cols = st.columns(3)
         with cols[1]:
             if poster_path:
                 url = ""
@@ -209,22 +230,20 @@ class Recommender:
                     url = f"https://www.imdb.com/find?s=tt&q={name}"
                 st.markdown(
                     f'<a href="{url}" target="_blank">'
-                    f'<img src="{tmdb.POSTER_PREFIX + poster_path}" width=300></a>',
+                    f'<img src="{tmdb.POSTER_PREFIX + poster_path}"></a>',
                     unsafe_allow_html=True
                 )
 
     @staticmethod
-    def add_buttons(dislike, like, skip):
-        cols = st.columns(8)
-        with cols[3]:
-            st.button('👎', on_click=dislike)
+    def add_buttons(like, skip):
+        cols = st.columns(9)
         with cols[4]:
-            st.button('⏭️', on_click=skip)
+            st.button('👎', on_click=skip)
         with cols[5]:
             st.button('👍', on_click=like)
 
     @staticmethod
-    def _get_recommendations(get_item, liked, disliked, skipped):
+    def _get_recommendations(get_item, liked, skipped):
         recommendations = {}
         for item_id in liked:
             item = get_item(item_id)
@@ -233,23 +252,9 @@ class Recommender:
                     recommendations[rec] += 1
                 else:
                     recommendations[rec] = 1
-        for item_id in disliked:
-            item = get_item(item_id)
-            for rec in item.get('recommendations', []):
-                if rec in recommendations:
-                    recommendations[rec] -= 1
-                else:
-                    recommendations[rec] = -1
-        for item_id in skipped:
-            item = get_item(item_id)
-            for rec in item.get('recommendations', []):
-                if rec in recommendations:
-                    recommendations[rec] -= 0.5
-                else:
-                    recommendations[rec] = -0.5
         recommendations = [
             k for k, _ in reversed(sorted(recommendations.items(), key=lambda i: i[1]))
-            if k not in liked and k not in disliked and k not in skipped
+            if k not in liked and k not in skipped
         ]
         return recommendations
 
@@ -259,17 +264,11 @@ class Recommender:
     def skip(self):
         self._button_click('skipped')
 
-    def dislike(self):
-        self._button_click('disliked')
-
     def tv_like(self):
         self._button_click('tv_liked')
 
     def tv_skip(self):
         self._button_click('tv_skipped')
-
-    def tv_dislike(self):
-        self._button_click('tv_disliked')
 
     @staticmethod
     def _button_click(item_type):

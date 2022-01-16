@@ -55,18 +55,15 @@ def get_movie_recommendations(movie_id):
 
 
 def get_tv_recommendations(tv_id):
-    print(f'get_tv_recommendations({tv_id})')
     recommendations = _get(f'/tv/{tv_id}/recommendations').get('results', [])
     return [recommendation['id'] for recommendation in recommendations]
 
 
 def get_movie_credits(movie_id):
-    print(f'get_movie_credits({movie_id})')
     return _get(f'/movie/{movie_id}/credits')
 
 
 def get_tv_credits(tv_id):
-    print(f'get_tv_credits({tv_id})')
     return _get(f'/tv/{tv_id}/credits')
 
 
