@@ -49,7 +49,6 @@ def get_tv(tv_id):
 
 
 def get_movie_recommendations(movie_id):
-    print(f'get_movie_recommendations({movie_id})')
     recommendations = _get(f'/movie/{movie_id}/recommendations').get('results', [])
     return [recommendation['id'] for recommendation in recommendations]
 

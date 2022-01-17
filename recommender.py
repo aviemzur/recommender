@@ -18,7 +18,12 @@ if 'query' not in st.session_state:
 class Recommender:
 
     def __init__(self) -> None:
-        self.db = data.get_data()
+        self.db = st.session_state['db']
+
+        if not self.db:
+            self.db = data.get_data()
+
+        st.session_state['db'] = self.db
 
         self.movies = self.db['movies']
         self.tv = self.db['tv']
@@ -143,7 +148,6 @@ class Recommender:
         if not movie:
             movie = tmdb.get_movie(movie_id)
             self.movies[str(movie_id)] = movie
-            data.put_data(self.db)
 
         return movie
 
@@ -153,7 +157,6 @@ class Recommender:
         if not tv:
             tv = tmdb.get_tv(tv_id)
             self.tv[str(tv_id)] = tv
-            data.put_data(self.db)
 
         return tv
 
@@ -189,7 +192,6 @@ class Recommender:
                 items = get_top_rated()
                 items = {item['id']: item for item in items[:20]}
                 self.db[item_type] = items
-                data.put_data(self.db)
             st.session_state['db'] = self.db
             if len(liked) < 1:
                 liked = items
@@ -200,7 +202,6 @@ class Recommender:
             if not item:
                 item = get_item(item_id)
                 items[str(item_id)] = item
-                data.put_data(self.db)
 
             rating = item.get('vote_average', 6)
             release_date = item.get('release_date', item.get('first_air_date', datetime.date.today().year))
