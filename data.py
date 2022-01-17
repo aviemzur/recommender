@@ -1,11 +1,9 @@
-import json
-
 import os
 import pickle
 import shutil
 
-DATA_FILE_NAME = 'data.json'
-DEFAULT_FILE_NAME = 'data.json.default'
+DATA_FILE_NAME = 'data.pkl'
+DEFAULT_FILE_NAME = 'data.pkl.default'
 
 if not os.path.exists(DATA_FILE_NAME):
     shutil.copyfile(DEFAULT_FILE_NAME, DATA_FILE_NAME)
