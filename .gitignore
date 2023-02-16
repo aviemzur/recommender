@@ -2,3 +2,4 @@ API_KEY
 API_KEY.bak
 __pycache__
 .idea
+.cache

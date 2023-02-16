@@ -165,8 +165,11 @@ class Recommender:
             item_type
         )
         item = self.get_current_item(get_item, get_top_rated, search_item, item_type, items, liked, skipped)
-        self.add_poster(item, item_type, cols)
-        self.add_buttons(like, skip)
+        if item:
+            self.add_poster(item, item_type, cols)
+            self.add_buttons(like, skip)
+        else:
+            data.put_data(self.db)
 
     def _setup(self, item_type):
         if item_type == 'movies':
@@ -197,14 +200,18 @@ class Recommender:
                 liked = items
             recommendations = self._get_recommendations(get_item, liked, skipped)
 
-        for item_id in recommendations:
+        for item_id, score in recommendations:
             item = items.get(item_id, None)
             if not item:
                 item = get_item(item_id)
                 items[str(item_id)] = item
 
+            print(f"{item.get('title')} ({score})")
+
             rating = item.get('vote_average', 6)
             release_date = item.get('release_date', item.get('first_air_date', datetime.date.today().year))
+            if not release_date:
+                release_date = datetime.date.today().year + 1
             year = int(str(release_date)[:4])
 
             if not item['poster_path']:
@@ -254,7 +261,7 @@ class Recommender:
                 else:
                     recommendations[rec] = 1
         recommendations = [
-            k for k, _ in reversed(sorted(recommendations.items(), key=lambda i: i[1]))
+            (k, v) for k, v in reversed(sorted(recommendations.items(), key=lambda i: i[1]))
             if k not in liked and k not in skipped
         ]
         return recommendations
